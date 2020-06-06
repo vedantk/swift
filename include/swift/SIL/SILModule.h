@@ -26,6 +26,7 @@
 #include "swift/Basic/Range.h"
 #include "swift/SIL/Notifications.h"
 #include "swift/SIL/SILCoverageMap.h"
+#include "swift/SIL/SILDebugScope.h"
 #include "swift/SIL/SILDeclRef.h"
 #include "swift/SIL/SILDefaultWitnessTable.h"
 #include "swift/SIL/SILDifferentiabilityWitness.h"
@@ -133,6 +134,7 @@ private:
   friend KeyPathPattern;
   friend SILBasicBlock;
   friend SILCoverageMap;
+  friend SILDebugScope;
   friend SILDefaultWitnessTable;
   friend SILDifferentiabilityWitness;
   friend SILFunction;
@@ -272,6 +274,9 @@ private:
   /// A list of clients that need to be notified when an instruction
   /// invalidation message is sent.
   llvm::SetVector<DeleteNotificationHandler*> NotificationHandlers;
+
+  /// The non-artificial debug scopes used in this module.
+  llvm::DenseMap<SILDebugScope::ScopeKey, SILDebugScope *> DebugScopes;
 
   SILModule(llvm::PointerUnion<FileUnit *, ModuleDecl *> context,
             Lowering::TypeConverter &TC, const SILOptions &Options);

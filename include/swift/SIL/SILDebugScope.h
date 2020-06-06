@@ -37,24 +37,48 @@ class SILInstruction;
 /// the inlining information. In LLVM IR the inline info is part of
 /// DILocation.
 class SILDebugScope : public SILAllocated<SILDebugScope> {
+  // FIXME: These members should be hidden.
 public:
   /// The AST node this lexical scope represents.
   SILLocation Loc;
+
   /// Always points to the parent lexical scope.
   /// For top-level scopes, this is the SILFunction.
   PointerUnion<const SILDebugScope *, SILFunction *> Parent;
+
   /// An optional chain of inlined call sites.
   ///
   /// If this scope is inlined, this points to a special "scope" that
   /// holds the location of the call site.
   const SILDebugScope *InlinedCallSite;
 
+private:
   SILDebugScope(SILLocation Loc, SILFunction *SILFn,
-                const SILDebugScope *ParentScope = nullptr,
-                const SILDebugScope *InlinedCallSite = nullptr);
+                const SILDebugScope *ParentScope,
+                const SILDebugScope *InlinedCallSite);
+
+public:
+  /// A key that uniquely identifies a SILDebugScope.
+  using ScopeKey =
+      std::pair<std::pair<const void *, SILFunction *>,
+                std::pair<const SILDebugScope *, const SILDebugScope *>>;
+
+  /// Create a debug scope for \p SILFn.
+  // FIXME: Should return a const SILDebugScope *.
+  static SILDebugScope *get(SILModule &M, SILLocation Loc, SILFunction *SILFn,
+                            const SILDebugScope *ParentScope = nullptr,
+                            const SILDebugScope *InlinedCallSite = nullptr);
 
   /// Create a scope for an artificial function.
-  SILDebugScope(SILLocation Loc);
+  static SILDebugScope *getArtificial(SILModule &M, SILLocation Loc);
+
+  /// Clone the scope \p Orig if it isn't rooted at \p SILFn. Return the cloned
+  /// scope, or return \p Orig if no deep copy was required.
+  static const SILDebugScope *cloneForFunction(SILFunction *SILFn,
+                                               const SILDebugScope *Orig);
+
+  /// Whether this is an artificial scope.
+  bool isArtificial() const { return Parent.isNull(); }
 
   /// Return the function this scope originated from before being inlined.
   SILFunction *getInlinedFunction() const;
@@ -63,6 +87,14 @@ public:
   /// inlined this recursively returns the function it was inlined
   /// into.
   SILFunction *getParentFunction() const;
+
+  /// If the current root debug scope for \p NewFn points to an original
+  /// function that was cloned to produce \p NewFn, update the debug scope.
+  static void updateScopeForClone(SILFunction &NewFn);
+
+  /// If the current debug scope for \p I points isn't nested within its current
+  /// function attach a deep clone of the current debug scope to \p I.
+  static void updateScopeForClonedInst(SILInstruction &I);
 
 #ifndef NDEBUG
   SWIFT_DEBUG_DUMPER(dump(SourceManager &SM,
@@ -75,20 +107,6 @@ public:
 /// Determine whether an instruction may not have a SILDebugScope.
 bool maybeScopeless(SILInstruction &I);
 
-/// Knows how to make a deep copy of a debug scope.
-class ScopeCloner {
-  llvm::SmallDenseMap<const SILDebugScope *,
-                      const SILDebugScope *> ClonedScopeCache;
-  SILFunction &NewFn;
-public:
-  /// ScopeCloner expects NewFn to be a clone of the original
-  /// function, with all debug scopes and locations still pointing to
-  /// the original function.
-  ScopeCloner(SILFunction &NewFn);
-  /// Return a (cached) deep copy of a scope.
-  const SILDebugScope *getOrCreateClonedScope(const SILDebugScope *OrigScope);
-};
-
-}
+} // namespace swift
 
 #endif

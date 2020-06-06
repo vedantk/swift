@@ -239,8 +239,8 @@ SILFunction *VJPEmitter::createEmptyPullback() {
       linkage, pbName, pbType, pbGenericEnv, original->getLocation(),
       original->isBare(), IsNotTransparent, vjp->isSerialized(),
       original->isDynamicallyReplaceable());
-  pullback->setDebugScope(new (module)
-                              SILDebugScope(original->getLocation(), pullback));
+  pullback->setDebugScope(
+      SILDebugScope::get(module, original->getLocation(), pullback));
   return pullback;
 }
 

@@ -13,6 +13,15 @@ func classifyPoint2(_ p: (Double, Double)) {
     }
 
 switch p {
+    // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata [[P:![0-9]+]]
+    // CHECK-SCOPES-SAME:                              !dbg [[PLOC:![0-9]+]]
+    //
+    // Just need two shadow slots for x & y in this switch.
+    //
+    // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata [[X1:![0-9]+]],
+    // CHECK-SCOPES-SAME:                              !dbg [[X1LOC:![0-9]+]]
+    // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata [[Y1:![0-9]+]],
+    // CHECK-SCOPES-SAME:                              !dbg [[Y1LOC:![0-9]+]]
     case (let x, let y) where
       // CHECK:   call {{.*}}double {{.*}}return_same{{.*}}, !dbg ![[LOC1:.*]]
       // CHECK: br {{.*}}, label {{.*}}, label {{.*}}, !dbg ![[LOC2:.*]]
@@ -25,40 +34,19 @@ switch p {
       // SIL-CHECK:  dealloc_stack{{.*}}line:[[@LINE-1]]:17:cleanup
       // Verify that the branch has a location >= the cleanup.
       // SIL-CHECK-NEXT:  br{{.*}}auto_gen
-      // CHECK-SCOPES: call void @llvm.dbg
-      // CHECK-SCOPES: call void @llvm.dbg
-      // CHECK-SCOPES: call void @llvm.dbg
-      // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata ![[X1:[0-9]+]],
-      // CHECK-SCOPES-SAME:                         !dbg ![[X1LOC:[0-9]+]]
-      // CHECK-SCOPES: call void @llvm.dbg
-      // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata ![[X2:[0-9]+]],
-      // CHECK-SCOPES-SAME:                              !dbg ![[X2LOC:[0-9]+]]
-      // CHECK-SCOPES: call void @llvm.dbg
-      // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata ![[X3:[0-9]+]],
-      // CHECK-SCOPES-SAME:                              !dbg ![[X3LOC:[0-9]+]]
     case (let x, let y) where x == -y:
-      // Verify that all variables end up in separate appropriate scopes.
-      // CHECK-SCOPES: ![[X1]] = !DILocalVariable(name: "x", scope: ![[SCOPE1:[0-9]+]],
-      // CHECK-SCOPES-SAME:                       line: [[@LINE-3]]
-      // CHECK-SCOPES: ![[X1LOC]] = !DILocation(line: [[@LINE-4]], column: 15,
-      // CHECK-SCOPES-SAME:                     scope: ![[SCOPE1]])
-      // FIXME: ![[SCOPE1]] = distinct !DILexicalBlock({{.*}}line: [[@LINE-6]]
       markUsed(x)
     case (let x, let y) where x >= -10 && x < 10 && y >= -10 && y < 10:
-      // CHECK-SCOPES: ![[X2]] = !DILocalVariable(name: "x", scope: ![[SCOPE2:[0-9]+]],
-      // CHECK-SCOPES-SAME:                       line: [[@LINE-2]]
-      // CHECK-SCOPES: ![[X2LOC]] = !DILocation(line: [[@LINE-3]], column: 15,
-      // CHECK-SCOPES-SAME:                     scope: ![[SCOPE2]])
       markUsed(x)
     case (let x, let y):
-      // CHECK-SCOPES: ![[X3]] = !DILocalVariable(name: "x", scope: ![[SCOPE3:[0-9]+]],
-      // CHECK-SCOPES-SAME:                       line: [[@LINE-2]]
-      // CHECK-SCOPES: ![[X3LOC]] = !DILocation(line: [[@LINE-3]], column: 15,
-      // CHECK-SCOPES-SAME:                     scope: ![[SCOPE3]])
       markUsed(x)
     }
 
 switch p {
+    // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata [[X2:![0-9]+]],
+    // CHECK-SCOPES-SAME:                              !dbg [[X2LOC:![0-9]+]]
+    // CHECK-SCOPES: call void @llvm.dbg{{.*}}metadata [[Y3:![0-9]+]],
+    // CHECK-SCOPES-SAME:                              !dbg [[Y3LOC:![0-9]+]]
     case (let x, let y) where x == 0:
       if y == 0 { markUsed(x) }
       else      { markUsed(y) } // SIL-CHECK-NOT: br{{.*}}line:[[@LINE]]:31:cleanup
@@ -67,6 +55,28 @@ switch p {
       else      { markUsed(y) }
     } // SIL-CHECK: br{{.*}}line:[[@LINE]]:5:cleanup
 }
+
+// Verify that all variables end up in their respective switch scopes.
+
+// The switch on line 15:
+// CHECK-SCOPES: [[X1]] = !DILocalVariable(name: "x", scope: [[SCOPE1:![0-9]+]],
+// CHECK-SCOPES-SAME:                       line: 25
+// CHECK-SCOPES: [[SCOPE1]] = distinct !DILexicalBlock({{.*}}line: 15
+// CHECK-SCOPES: [[X1LOC]] = !DILocation(line: 25, 
+// CHECK-SCOPES-SAME:                     scope: [[SCOPE1]])
+// CHECK-SCOPES: [[Y1]] = !DILocalVariable(name: "y", scope: [[SCOPE1]],
+// CHECK-SCOPES-SAME:                       line: 25
+
+// The switch on line 45:
+// CHECK-SCOPES: [[X2]] = !DILocalVariable(name: "x", scope: [[SCOPE2:![0-9]+]],
+// CHECK-SCOPES-SAME:                       line: 50
+// CHECK-SCOPES: [[SCOPE2]] = distinct !DILexicalBlock({{.*}}line: 45
+// CHECK-SCOPES: [[X2LOC]] = !DILocation(line: 50
+// CHECK-SCOPES-SAME:                     scope: [[SCOPE2]])
+// CHECK-SCOPES: [[Y3]] = !DILocalVariable(name: "y", scope: [[SCOPE2]]
+// CHECK-SCOPES-SAME:                       line: 50
+// CHECK-SCOPES: [[Y3LOC]] = !DILocation(line: 50
+// CHECK-SCOPES-SAME:                     scope: [[SCOPE2]])
 
 // CHECK: !DILocation(line: [[@LINE+1]],
 }

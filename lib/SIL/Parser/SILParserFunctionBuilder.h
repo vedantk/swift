@@ -29,7 +29,7 @@ public:
     auto *result = builder.createFunction(
         SILLinkage::Private, name, ty, nullptr, loc, IsNotBare,
         IsNotTransparent, IsNotSerialized, IsNotDynamic);
-    result->setDebugScope(new (builder.mod) SILDebugScope(loc, result));
+    result->setDebugScope(SILDebugScope::get(builder.mod, loc, result));
     return result;
   }
 };

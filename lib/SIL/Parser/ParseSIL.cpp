@@ -7027,6 +7027,6 @@ bool SILParserState::parseSILScope(Parser &P) {
     return true;
   }
 
-  Scope = new (M) SILDebugScope(Loc, ParentFn, Parent, InlinedAt);
+  Scope = SILDebugScope::get(M, Loc, ParentFn, Parent, InlinedAt);
   return false;
 }

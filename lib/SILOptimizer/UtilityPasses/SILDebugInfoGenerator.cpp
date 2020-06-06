@@ -127,7 +127,7 @@ class SILDebugInfoGenerator : public SILModuleTransform {
         // Set the debug scope for the function.
         SILLocation::DebugLoc DL(Ctx.LCS.LineNum, 1, FileNameBuf);
         RegularLocation Loc(DL);
-        SILDebugScope *Scope = new (*M) SILDebugScope(Loc, F);
+        SILDebugScope *Scope = SILDebugScope::get(*M, Loc, F);
         F->setSILDebugScope(Scope);
 
         // Ensure that the function is visible for debugging.

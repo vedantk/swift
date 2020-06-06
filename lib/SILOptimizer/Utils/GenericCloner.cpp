@@ -187,8 +187,8 @@ const SILDebugScope *GenericCloner::remapScope(const SILDebugScope *DS) {
 
   auto *ParentScope = DS->Parent.dyn_cast<const SILDebugScope *>();
   auto *RemappedScope =
-      new (M) SILDebugScope(DS->Loc, ParentFunction, remapScope(ParentScope),
-                            remapScope(DS->InlinedCallSite));
+      SILDebugScope::get(M, DS->Loc, ParentFunction, remapScope(ParentScope),
+                         remapScope(DS->InlinedCallSite));
   RemappedScopeCache.insert({DS, RemappedScope});
   return RemappedScope;
 }

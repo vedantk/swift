@@ -1091,7 +1091,7 @@ JVPEmitter::createEmptyDifferential(ADContext &context,
       original->isBare(), IsNotTransparent, jvp->isSerialized(),
       original->isDynamicallyReplaceable());
   differential->setDebugScope(
-      new (module) SILDebugScope(original->getLocation(), differential));
+      SILDebugScope::get(module, original->getLocation(), differential));
 
   return differential;
 }

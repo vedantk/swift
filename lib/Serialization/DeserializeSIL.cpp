@@ -674,7 +674,7 @@ SILDeserializer::readSILFunctionChecked(DeclID FID, SILFunction *existingFn,
   fn->setBare(IsBare);
   const SILDebugScope *DS = fn->getDebugScope();
   if (!DS) {
-    DS = new (SILMod) SILDebugScope(loc, fn);
+    DS = SILDebugScope::get(SILMod, loc, fn);
     fn->setDebugScope(DS);
   }
 

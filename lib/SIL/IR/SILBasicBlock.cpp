@@ -296,8 +296,7 @@ void SILBasicBlock::moveAfter(SILBasicBlock *After) {
 void SILBasicBlock::moveTo(SILBasicBlock::iterator To, SILInstruction *I) {
   assert(I->getParent() != this && "Must move from different basic block");
   InstList.splice(To, I->getParent()->InstList, I);
-  ScopeCloner ScopeCloner(*Parent);
-  I->setDebugScope(ScopeCloner.getOrCreateClonedScope(I->getDebugScope()));
+  SILDebugScope::updateScopeForClonedInst(*I);
 }
 
 void
@@ -312,55 +311,14 @@ transferNodesFromList(llvm::ilist_traits<SILBasicBlock> &SrcTraits,
   if (Parent == SrcTraits.Parent)
     return;
 
-  ScopeCloner ScopeCloner(*Parent);
+  SILDebugScope::updateScopeForClone(*Parent);
 
   // If splicing blocks not in the same function, update the parent pointers.
   for (; First != Last; ++First) {
     First->Parent = Parent;
     for (auto &II : *First)
-      II.setDebugScope(ScopeCloner.getOrCreateClonedScope(II.getDebugScope()));
+      SILDebugScope::updateScopeForClonedInst(II);
   }
-}
-
-/// ScopeCloner expects NewFn to be a clone of the original
-/// function, with all debug scopes and locations still pointing to
-/// the original function.
-ScopeCloner::ScopeCloner(SILFunction &NewFn) : NewFn(NewFn) {
-  // Some clients of SILCloner copy over the original function's
-  // debug scope. Create a new one here.
-  // FIXME: Audit all call sites and make them create the function
-  // debug scope.
-  auto *SILFn = NewFn.getDebugScope()->Parent.get<SILFunction *>();
-  if (SILFn != &NewFn) {
-    SILFn->setInlined();
-    NewFn.setDebugScope(getOrCreateClonedScope(NewFn.getDebugScope()));
-  }
-}
-
-const SILDebugScope *
-ScopeCloner::getOrCreateClonedScope(const SILDebugScope *OrigScope) {
-  if (!OrigScope)
-    return nullptr;
-
-  auto it = ClonedScopeCache.find(OrigScope);
-  if (it != ClonedScopeCache.end())
-    return it->second;
-
-  auto ClonedScope = new (NewFn.getModule()) SILDebugScope(*OrigScope);
-  if (OrigScope->InlinedCallSite) {
-    // For inlined functions, we need to rewrite the inlined call site.
-    ClonedScope->InlinedCallSite =
-        getOrCreateClonedScope(OrigScope->InlinedCallSite);
-  } else {
-    if (auto *ParentScope = OrigScope->Parent.dyn_cast<const SILDebugScope *>())
-      ClonedScope->Parent = getOrCreateClonedScope(ParentScope);
-    else
-      ClonedScope->Parent = &NewFn;
-  }
-  // Create an inline scope for the cloned instruction.
-  assert(ClonedScopeCache.find(OrigScope) == ClonedScopeCache.end());
-  ClonedScopeCache.insert({OrigScope, ClonedScope});
-  return ClonedScope;
 }
 
 bool SILBasicBlock::isEntry() const {

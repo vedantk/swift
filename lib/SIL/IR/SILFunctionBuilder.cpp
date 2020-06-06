@@ -33,7 +33,7 @@ SILFunction *SILFunctionBuilder::getOrCreateFunction(
                                 isBareSILFunction, isTransparent, isSerialized,
                                 entryCount, isDynamic, IsNotExactSelfClass,
                                 isThunk, subclassScope);
-  fn->setDebugScope(new (mod) SILDebugScope(loc, fn));
+  fn->setDebugScope(SILDebugScope::get(mod, loc, fn));
   return fn;
 }
 
@@ -174,7 +174,7 @@ SILFunction *SILFunctionBuilder::getOrCreateFunction(
                                 IsNotExactSelfClass,
                                 IsNotThunk, constant.getSubclassScope(),
                                 inlineStrategy, EK);
-  F->setDebugScope(new (mod) SILDebugScope(loc, F));
+  F->setDebugScope(SILDebugScope::get(mod, loc, F));
 
   if (constant.isGlobal())
     F->setSpecialPurpose(SILFunction::Purpose::GlobalInit);

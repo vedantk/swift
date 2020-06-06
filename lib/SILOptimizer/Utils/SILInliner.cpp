@@ -410,8 +410,8 @@ SILInlineCloner::SILInlineCloner(
   } else {
     // Performance inlining. Construct a proper inline scope pointing
     // back to the call site.
-    CallSiteScope = new (F.getModule()) SILDebugScope(
-        apply.getLoc(), nullptr, applyScope, applyScope->InlinedCallSite);
+    CallSiteScope = SILDebugScope::get(F.getModule(), apply.getLoc(), nullptr,
+                                       applyScope, applyScope->InlinedCallSite);
   }
   assert(CallSiteScope && "call site has no scope");
   assert(CallSiteScope->getParentFunction() == &F);
@@ -643,8 +643,8 @@ SILInlineCloner::getOrCreateInlineScope(const SILDebugScope *CalleeScope) {
         ForInlining);
 
   auto *ParentScope = CalleeScope->Parent.dyn_cast<const SILDebugScope *>();
-  auto *InlinedScope = new (M) SILDebugScope(
-      CalleeScope->Loc, ParentFunction,
+  auto *InlinedScope = SILDebugScope::get(
+      M, CalleeScope->Loc, ParentFunction,
       ParentScope ? getOrCreateInlineScope(ParentScope) : nullptr, InlinedAt);
   InlinedScopeCache.insert({CalleeScope, InlinedScope});
   return InlinedScope;

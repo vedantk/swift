@@ -439,6 +439,10 @@ public:
 template<typename ImplClass>
 class SILClonerWithScopes : public SILCloner<ImplClass> {
   friend class SILCloner<ImplClass>;
+
+  /// The new (cloned) function root for cloned debug scopes.
+  SILFunction *NewFn = nullptr;
+
 public:
   SILClonerWithScopes(SILFunction &To,
                       SILOpenedArchetypesTracker &OpenedArchetypesTracker,
@@ -455,7 +459,8 @@ public:
     if (Disable)
       return;
 
-    scopeCloner.reset(new ScopeCloner(To));
+    NewFn = &To;
+    SILDebugScope::updateScopeForClone(*NewFn);
   }
 
   SILClonerWithScopes(SILFunction &To,
@@ -472,12 +477,10 @@ public:
     if (Disable)
       return;
 
-    scopeCloner.reset(new ScopeCloner(To));
+    NewFn = &To;
+    SILDebugScope::updateScopeForClone(*NewFn);
   }
 
-
-private:
-  std::unique_ptr<ScopeCloner> scopeCloner;
 protected:
   /// Clone the SILDebugScope for the cloned function.
   void postProcess(SILInstruction *Orig, SILInstruction *Cloned) {
@@ -485,7 +488,7 @@ protected:
   }
 
   const SILDebugScope *remapScope(const SILDebugScope *DS) {
-    return scopeCloner ? scopeCloner->getOrCreateClonedScope(DS) : DS;
+    return NewFn ? SILDebugScope::cloneForFunction(NewFn, DS) : DS;
   }
 };
 

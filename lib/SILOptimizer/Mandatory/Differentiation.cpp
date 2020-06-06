@@ -787,7 +787,7 @@ static SILFunction *createEmptyVJP(ADContext &context, SILFunction *original,
       witness->getLinkage(), vjpName, vjpType, vjpGenericEnv,
       original->getLocation(), original->isBare(), IsNotTransparent,
       isSerialized, original->isDynamicallyReplaceable());
-  vjp->setDebugScope(new (module) SILDebugScope(original->getLocation(), vjp));
+  vjp->setDebugScope(SILDebugScope::get(module, original->getLocation(), vjp));
 
   LLVM_DEBUG(llvm::dbgs() << "VJP type: " << vjp->getLoweredFunctionType()
                           << "\n");
@@ -832,7 +832,7 @@ static SILFunction *createEmptyJVP(ADContext &context, SILFunction *original,
       witness->getLinkage(), jvpName, jvpType, jvpGenericEnv,
       original->getLocation(), original->isBare(), IsNotTransparent,
       isSerialized, original->isDynamicallyReplaceable());
-  jvp->setDebugScope(new (module) SILDebugScope(original->getLocation(), jvp));
+  jvp->setDebugScope(SILDebugScope::get(module, original->getLocation(), jvp));
 
   LLVM_DEBUG(llvm::dbgs() << "JVP type: " << jvp->getLoweredFunctionType()
                           << "\n");

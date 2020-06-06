@@ -196,7 +196,7 @@ SILGenModule::emitVTableMethod(ClassDecl *theClass,
       genericEnv, loc,
       IsBare, IsNotTransparent, IsNotSerialized, IsNotDynamic,
       ProfileCounter(), IsThunk);
-  thunk->setDebugScope(new (M) SILDebugScope(loc, thunk));
+  thunk->setDebugScope(SILDebugScope::get(M, loc, thunk));
 
   PrettyStackTraceSILFunction trace("generating vtable thunk", thunk);
 
@@ -763,8 +763,8 @@ SILFunction *SILGenModule::emitProtocolWitness(
       IsNotDynamic, ProfileCounter(), IsThunk, SubclassScope::NotApplicable,
       InlineStrategy);
 
-  f->setDebugScope(new (M)
-                   SILDebugScope(RegularLocation(witnessRef.getDecl()), f));
+  f->setDebugScope(
+      SILDebugScope::get(M, RegularLocation(witnessRef.getDecl()), f));
 
   PrettyStackTraceSILFunction trace("generating protocol witness thunk", f);
 
@@ -835,8 +835,8 @@ static SILFunction *emitSelfConformanceWitness(SILGenModule &SGM,
       IsSerialized, IsNotDynamic, ProfileCounter(), IsThunk,
       SubclassScope::NotApplicable, InlineDefault);
 
-  f->setDebugScope(new (SGM.M)
-                   SILDebugScope(RegularLocation(requirement.getDecl()), f));
+  f->setDebugScope(
+      SILDebugScope::get(SGM.M, RegularLocation(requirement.getDecl()), f));
 
   PrettyStackTraceSILFunction trace("generating protocol witness thunk", f);
 

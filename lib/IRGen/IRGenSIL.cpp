@@ -386,8 +386,10 @@ public:
   /// With closure captures it is actually possible to have two function
   /// arguments that both have the same name. Until this is fixed, we need to
   /// also hash the ArgNo here.
-  using StackSlotKey =
-      std::pair<unsigned, std::pair<const SILDebugScope *, StringRef>>;
+  /// Cases in a switch are included within the scope for the switch, so we
+  /// need to disambiguate case payloads by type.
+  using StackSlotKey = std::pair<std::pair<unsigned, llvm::Type *>,
+                                 std::pair<const SILDebugScope *, StringRef>>;
   /// Keeps track of the mapping of source variables to -O0 shadow copy allocas.
   llvm::SmallDenseMap<StackSlotKey, Address, 8> ShadowStackSlots;
   llvm::SmallDenseMap<Decl *, SmallString<4>, 8> AnonymousVariables;
@@ -702,7 +704,8 @@ public:
     auto Align = _Align.getValueOr(IGM.getPointerAlignment());
 
     unsigned ArgNo = VarInfo.ArgNo;
-    auto &Alloca = ShadowStackSlots[{ArgNo, {Scope, VarInfo.Name}}];
+    auto &Alloca =
+        ShadowStackSlots[{{ArgNo, Storage->getType()}, {Scope, VarInfo.Name}}];
     if (!Alloca.isValid())
       Alloca = createAlloca(Storage->getType(), Align, VarInfo.Name + ".debug");
     zeroInit(cast<llvm::AllocaInst>(Alloca.getAddress()));
